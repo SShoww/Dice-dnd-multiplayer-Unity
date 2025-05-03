@@ -1,21 +1,29 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MenuManager : MonoBehaviour
 {
-    public TMP_InputField nameInputField;
-    public TMP_InputField codeInputField;
+    public TMP_InputField nameInput;
+    public TMP_InputField codeInput;
 
-    public void OnClickCreateRoom()
+    public void OnCreateRoomClicked()
     {
-        MultiplayerManager.Instance.playerName = nameInputField.text;
+        string playerName = nameInput.text;
+        if (string.IsNullOrEmpty(playerName)) return;
+
+        MultiplayerManager.Instance.playerName = playerName;
         MultiplayerManager.Instance.CreateLobby();
     }
 
-    public void OnClickJoinRoom()
+    public void OnJoinRoomClicked()
     {
-        MultiplayerManager.Instance.playerName = nameInputField.text;
-        string joinCode = codeInputField.text;
-        MultiplayerManager.Instance.JoinLobby(joinCode);
+        string playerName = nameInput.text;
+        string roomCode = codeInput.text;
+
+        if (string.IsNullOrEmpty(playerName) || string.IsNullOrEmpty(roomCode)) return;
+
+        MultiplayerManager.Instance.playerName = playerName;
+        MultiplayerManager.Instance.JoinLobby(roomCode);
     }
 }

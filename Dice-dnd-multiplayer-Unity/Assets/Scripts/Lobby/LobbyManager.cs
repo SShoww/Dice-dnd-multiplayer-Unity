@@ -1,55 +1,91 @@
 using System.Collections.Generic;
+using UnityEngine.UI;
 using TMPro;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Lobbies;
 using UnityEngine;
+using System.Collections;
+using Unity.Netcode;
+using UnityEngine.SceneManagement;
 
 public class LobbyManager : MonoBehaviour
 {
-
-    public TMP_Text lobbyCodeText;
-    public TMP_Text playerListText;
-
-    private float updateInterval = 2f;
-    private float timer;
+    [Header("UI References")]
+    public TextMeshProUGUI codeText;
+    public GameObject nameBlockPrefab;
+    public Transform nameBlockParent;
+    public Button backButton;
+    public Button startGameButton;
 
     private void Start()
     {
+        backButton.onClick.AddListener(LeaveLobby);
+        startGameButton.onClick.AddListener(StartGame);
+
+        // Show start button only to host
+        startGameButton.gameObject.SetActive(NetworkManager.Singleton.IsHost);
+
         UpdateLobbyUI();
+        StartCoroutine(AutoRefreshLobby());
     }
 
-    private void Update()
+    public void UpdateLobbyUI()
     {
-        timer += Time.deltaTime;
-        if (timer >= updateInterval)
+        // Clear previous list
+        foreach (Transform child in nameBlockParent)
         {
-            timer = 0f;
-            RefreshLobby();
+            Destroy(child.gameObject);
         }
-    }
 
-    async void RefreshLobby()
-    {
-        if (MultiplayerManager.Instance.currentLobby != null)
+        // Display lobby code
+        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.currentLobby != null)
         {
-            Lobby lobby = await LobbyService.Instance.GetLobbyAsync(MultiplayerManager.Instance.currentLobby.Id);
-            MultiplayerManager.Instance.currentLobby = lobby;
-            UpdateLobbyUI();
-        }
-    }
-
-    void UpdateLobbyUI()
-    {
-        if (MultiplayerManager.Instance.currentLobby != null)
-        {
-            lobbyCodeText.text = "Code: " + MultiplayerManager.Instance.currentLobby.LobbyCode;
+            codeText.text = MultiplayerManager.Instance.currentLobby.LobbyCode;
 
             List<Player> players = MultiplayerManager.Instance.currentLobby.Players;
-            playerListText.text = "Players:\n";
-            foreach (var player in players)
+            foreach (Player player in players)
             {
-                playerListText.text += "- " + player.Id + "\n";
+                string playerName = player.Data != null && player.Data.ContainsKey("playerName")
+                    ? player.Data["playerName"].Value
+                    : "Unknown";
+
+                GameObject block = Instantiate(nameBlockPrefab, nameBlockParent);
+                TextMeshProUGUI nameText = block.GetComponentInChildren<TextMeshProUGUI>();
+                if (nameText != null)
+                {
+                    nameText.text = playerName;
+                }
             }
+        }
+        else
+        {
+            codeText.text = "LOBBY ERROR";
+        }
+    }
+
+    private void LeaveLobby()
+    {
+        if (MultiplayerManager.Instance != null && MultiplayerManager.Instance.currentLobby != null)
+        {
+            MultiplayerManager.Instance.currentLobby = null;
+            SceneManager.LoadScene("MenuScene");
+        }
+    }
+
+    private void StartGame()
+    {
+        if (NetworkManager.Singleton.IsHost)
+        {
+            SceneManager.LoadScene("GameScene");
+        }
+    }
+
+    private IEnumerator AutoRefreshLobby()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(3f);
+            UpdateLobbyUI();
         }
     }
 }

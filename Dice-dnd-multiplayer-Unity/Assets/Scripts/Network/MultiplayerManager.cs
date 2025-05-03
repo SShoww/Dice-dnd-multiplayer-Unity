@@ -57,7 +57,10 @@ public class MultiplayerManager : MonoBehaviour
             CreateLobbyOptions options = new CreateLobbyOptions
             {
                 IsPrivate = false,
-                Player = new Player(id: AuthenticationService.Instance.PlayerId),
+                Player = new Player(id: AuthenticationService.Instance.PlayerId, data: new Dictionary<string, PlayerDataObject>
+                {
+                    {"playerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName)}
+                }),
                 Data = new Dictionary<string, DataObject>
                 {
                     {"joinCode", new DataObject(DataObject.VisibilityOptions.Member, joinCode)}
@@ -84,7 +87,10 @@ public class MultiplayerManager : MonoBehaviour
         {
             JoinLobbyByCodeOptions options = new JoinLobbyByCodeOptions
             {
-                Player = new Player(id: AuthenticationService.Instance.PlayerId)
+                Player = new Player(id: AuthenticationService.Instance.PlayerId, data: new Dictionary<string, PlayerDataObject>
+                {
+                    {"playerName", new PlayerDataObject(PlayerDataObject.VisibilityOptions.Member, playerName)}
+                })
             };
 
             currentLobby = await LobbyService.Instance.JoinLobbyByCodeAsync(code, options);
